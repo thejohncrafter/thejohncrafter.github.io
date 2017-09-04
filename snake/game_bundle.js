@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 3);
+/******/ 	return __webpack_require__(__webpack_require__.s = 5);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -75,6 +75,29 @@
 
 /***/ }),
 /* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _jsInterpreter = __webpack_require__(13);
+
+var _jsInterpreter2 = _interopRequireDefault(_jsInterpreter);
+
+var _CommonTypes = __webpack_require__(0);
+
+var CommonTypes = _interopRequireWildcard(_CommonTypes);
+
+var _Snake = __webpack_require__(10);
+
+var _Snake2 = _interopRequireDefault(_Snake);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/***/ }),
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -105,7 +128,7 @@ var map = exports.map = {
 };
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -402,7 +425,64 @@ exports.encodePath = function encodePointer(a){
 
 
 /***/ }),
-/* 3 */
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.shadowBlur = undefined;
+exports.renderMap = renderMap;
+
+var _colors = __webpack_require__(2);
+
+var colors = _interopRequireWildcard(_colors);
+
+var _CommonTypes = __webpack_require__(0);
+
+var CommonTypes = _interopRequireWildcard(_CommonTypes);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+var shadowBlur = exports.shadowBlur = 20;
+
+function render(context, x, y, brush, editor) {
+  switch (brush) {
+    case 'Wall':
+      context.shadowBlur = shadowBlur;
+      context.shadowColor = colors.map.white;
+      context.strokeStyle = colors.map.white;
+      context.strokeRect(x * 8, y * 8, 7, 7);
+      break;
+    case 'Spawnpoint':
+      if (editor) {
+        context.shadowBlur = 0;
+        context.strokeStyle = colors.map.green;
+        context.strokeRect(x * 8, y * 8, 7, 7);
+      }
+      break;
+  }
+}
+
+function renderMap(context, map) {
+  Object.keys(map.blocks).forEach(function (accessor) {
+    var offset = {
+      x: parseInt(accessor.substring(0, accessor.indexOf(':')), 10) * 16,
+      y: parseInt(accessor.substring(accessor.indexOf(':') + 1), 10) * 16
+    };
+    map.blocks[accessor].forEach(function (arr, subdivisionX) {
+      return arr.forEach(function (brush, subdivisionY) {
+        render(context, offset.x + subdivisionX, offset.y + subdivisionY, brush, true);
+      });
+    });
+  });
+}
+
+/***/ }),
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -417,7 +497,7 @@ var _requireMap = __webpack_require__(15);
 
 var _requireMap2 = _interopRequireDefault(_requireMap);
 
-var _localStorageHandler = __webpack_require__(5);
+var _localStorageHandler = __webpack_require__(7);
 
 var localStorageHandler = _interopRequireWildcard(_localStorageHandler);
 
@@ -425,15 +505,15 @@ var _MainMenu = __webpack_require__(16);
 
 var _MainMenu2 = _interopRequireDefault(_MainMenu);
 
-var _MapController = __webpack_require__(11);
+var _MapController = __webpack_require__(12);
 
 var _MapController2 = _interopRequireDefault(_MapController);
 
-var _GameRenderer = __webpack_require__(9);
+var _GameRenderer = __webpack_require__(11);
 
 var _GameRenderer2 = _interopRequireDefault(_GameRenderer);
 
-var _GameLogger = __webpack_require__(4);
+var _GameLogger = __webpack_require__(6);
 
 var _GameLogger2 = _interopRequireDefault(_GameLogger);
 
@@ -441,7 +521,7 @@ var _contextmenu = __webpack_require__(17);
 
 var contextmenu = _interopRequireWildcard(_contextmenu);
 
-var _GameTypes = __webpack_require__(10);
+var _GameTypes = __webpack_require__(1);
 
 var GameTypes = _interopRequireWildcard(_GameTypes);
 
@@ -458,6 +538,26 @@ function startGame(canvas, context) {
 
   localStorageHandler.init();
 
+  function updateCanvasSize() {
+    if (window.innerWidth < 640 || window.innerHeight < 480) {
+      var scaleX = window.innerWidth / 640;
+      var scaleY = window.innerHeight / 480;
+
+      if (scaleX < scaleY) {
+        canvas.style.width = scaleX * 640 + 'px';
+        canvas.style.height = scaleX * 480 + 'px';
+      } else {
+        canvas.style.width = scaleY * 640 + 'px';
+        canvas.style.height = scaleY * 480 + 'px';
+      }
+    } else {
+      canvas.style.width = '640px';
+      canvas.style.height = '480px';
+    }
+  }
+  window.onresize = updateCanvasSize;
+  updateCanvasSize();
+
   (0, _requireMap2.default)(function (data) {
     var isPlaying = false;
     var mainMenu = new _MainMenu2.default(context, data);
@@ -466,11 +566,73 @@ function startGame(canvas, context) {
     var gameLogger = new _GameLogger2.default();
     var mapController = new _MapController2.default(gameRenderer, gameLogger, data.maps);
 
+    var controlMap = {
+      'ArrowUp': 'UP',
+      'ArrowDown': 'DOWN',
+      'ArrowLeft': 'LEFT',
+      'ArrowRight': 'RIGHT',
+      'Backspace': 'ESCAPE',
+      'Enter': 'ENTER'
+    };
+
+    function onControl(control) {
+      if (isPlaying) mapController.onControl(control);else mainMenu.onControl(control);
+    }
+
     document.addEventListener('keydown', function (event) {
       if (!event.defaultPrevented) {
-        if (isPlaying) mapController.onKeyDown(event.key);else mainMenu.onKeyDown(event.key);
+        if (controlMap[event.key]) onControl(controlMap[event.key]);
       }
     });
+
+    var mouseStart = null;
+    var clickTime = 0;
+
+    var onTouchEnd = function onTouchEnd(event) {
+      event.preventDefault();
+      if (mouseStart) {
+        var dx = event.changedTouches[0].pageX - mouseStart.x;
+        var dy = event.changedTouches[0].pageY - mouseStart.y;
+
+        var currentTime = new Date().getTime();
+
+        if (currentTime - clickTime <= 250) {
+          onControl('ESCAPE');
+        } else {
+          if (dx * dx + dy * dy > 100) {
+            clickTime = 0; // prevents from escaping
+            if (Math.abs(dx) > Math.abs(dy)) {
+              if (dx > 0) {
+                onControl('RIGHT');
+              } else {
+                onControl('LEFT');
+              }
+            } else {
+              if (dy > 0) {
+                onControl('DOWN');
+              } else {
+                onControl('UP');
+              }
+            }
+          } else {
+            onControl('ENTER');
+          }
+        }
+
+        clickTime = currentTime;
+        mouseStart = null;
+      }
+    };
+
+    document.addEventListener('touchstart', function (event) {
+      event.preventDefault();
+      mouseStart = {
+        x: event.changedTouches[0].pageX,
+        y: event.changedTouches[0].pageY
+      };
+    });
+    document.addEventListener('touchend', onTouchEnd);
+    document.addEventListener('touchleave', onTouchEnd);
 
     exports.loadMap = loadMap = function loadMap(id) {
       isPlaying = true;
@@ -497,7 +659,7 @@ window.onload = function () {
 };
 
 /***/ }),
-/* 4 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -509,7 +671,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _escapeHtml = __webpack_require__(20);
+var _escapeHtml = __webpack_require__(19);
 
 var _escapeHtml2 = _interopRequireDefault(_escapeHtml);
 
@@ -581,7 +743,7 @@ var GameLogger = function () {
 exports.default = GameLogger;
 
 /***/ }),
-/* 5 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -612,7 +774,7 @@ function setPlayedMaps(played) {
 }
 
 /***/ }),
-/* 6 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -710,7 +872,7 @@ function paint(state, blocks, brush, defaultValue) {
 }
 
 /***/ }),
-/* 7 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -722,15 +884,19 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _colors = __webpack_require__(1);
+var _colors = __webpack_require__(2);
 
 var colors = _interopRequireWildcard(_colors);
+
+var _renderer = __webpack_require__(4);
+
+var renderer = _interopRequireWildcard(_renderer);
 
 var _CommonTypes = __webpack_require__(0);
 
 var CommonTypes = _interopRequireWildcard(_CommonTypes);
 
-var _MapTools = __webpack_require__(6);
+var _MapTools = __webpack_require__(8);
 
 var MapTools = _interopRequireWildcard(_MapTools);
 
@@ -750,6 +916,8 @@ var Ball = function () {
   _createClass(Ball, [{
     key: 'render',
     value: function render(context) {
+      context.shadowBlur = renderer.shadowBlur;
+      context.shadowColor = colors.map.red;
       context.strokeStyle = colors.map.red;
       context.strokeRect(this.position.x * 8, this.position.y * 8, 7, 7);
       if (this.explosionCoordinates != null) {
@@ -809,7 +977,7 @@ var Ball = function () {
 exports.default = Ball;
 
 /***/ }),
-/* 8 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -821,21 +989,29 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _colors = __webpack_require__(1);
+var _colors = __webpack_require__(2);
 
 var colors = _interopRequireWildcard(_colors);
+
+var _renderer = __webpack_require__(4);
+
+var renderer = _interopRequireWildcard(_renderer);
 
 var _CommonTypes = __webpack_require__(0);
 
 var CommonTypes = _interopRequireWildcard(_CommonTypes);
 
-var _Ball = __webpack_require__(7);
+var _Ball = __webpack_require__(9);
 
 var _Ball2 = _interopRequireDefault(_Ball);
 
-var _MapTools = __webpack_require__(6);
+var _MapTools = __webpack_require__(8);
 
 var MapTools = _interopRequireWildcard(_MapTools);
+
+var _GameTypes = __webpack_require__(1);
+
+var GameTypes = _interopRequireWildcard(_GameTypes);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -861,19 +1037,19 @@ var Snake = function () {
   }
 
   _createClass(Snake, [{
-    key: 'onKeyDown',
-    value: function onKeyDown(key) {
-      switch (key) {
-        case 'ArrowUp':
+    key: 'onControl',
+    value: function onControl(control) {
+      switch (control) {
+        case 'UP':
           if (this.direction != 'down') this.nextDirection = 'up';
           break;
-        case 'ArrowDown':
+        case 'DOWN':
           if (this.direction != 'up') this.nextDirection = 'down';
           break;
-        case 'ArrowLeft':
+        case 'LEFT':
           if (this.direction != 'right') this.nextDirection = 'left';
           break;
-        case 'ArrowRight':
+        case 'RIGHT':
           if (this.direction != 'left') this.nextDirection = 'right';
           break;
       }
@@ -882,6 +1058,8 @@ var Snake = function () {
     key: 'render',
     value: function render(context) {
       context.strokeStyle = this.state == 'dead' ? colors.map.red : colors.map.green;
+      context.shadowBlur = renderer.shadowBlur;
+      context.shadowColor = colors.map.green;
       this.occupied.forEach(function (position) {
         context.strokeRect(position.x * 8, position.y * 8, 7, 7);
       });
@@ -977,7 +1155,7 @@ var Snake = function () {
 exports.default = Snake;
 
 /***/ }),
-/* 9 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -989,11 +1167,11 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _renderer = __webpack_require__(12);
+var _renderer = __webpack_require__(4);
 
 var renderer = _interopRequireWildcard(_renderer);
 
-var _colors = __webpack_require__(1);
+var _colors = __webpack_require__(2);
 
 var colors = _interopRequireWildcard(_colors);
 
@@ -1001,11 +1179,11 @@ var _CommonTypes = __webpack_require__(0);
 
 var _CommonTypes2 = _interopRequireDefault(_CommonTypes);
 
-var _Snake = __webpack_require__(8);
+var _Snake = __webpack_require__(10);
 
 var _Snake2 = _interopRequireDefault(_Snake);
 
-var _Ball = __webpack_require__(7);
+var _Ball = __webpack_require__(9);
 
 var _Ball2 = _interopRequireDefault(_Ball);
 
@@ -1047,8 +1225,6 @@ var GameRenderer = function () {
       balls.forEach(function (ball) {
         return ball.render(_this.context);
       });
-
-      renderer.applyGlowEffect(this.context);
     }
   }]);
 
@@ -1058,30 +1234,7 @@ var GameRenderer = function () {
 exports.default = GameRenderer;
 
 /***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _jsInterpreter = __webpack_require__(13);
-
-var _jsInterpreter2 = _interopRequireDefault(_jsInterpreter);
-
-var _CommonTypes = __webpack_require__(0);
-
-var CommonTypes = _interopRequireWildcard(_CommonTypes);
-
-var _Snake = __webpack_require__(8);
-
-var _Snake2 = _interopRequireDefault(_Snake);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1101,33 +1254,37 @@ var _CommonTypes = __webpack_require__(0);
 
 var CommonTypes = _interopRequireWildcard(_CommonTypes);
 
-var _localStorageHandler = __webpack_require__(5);
+var _localStorageHandler = __webpack_require__(7);
 
 var localStorageHandler = _interopRequireWildcard(_localStorageHandler);
 
-var _game = __webpack_require__(3);
+var _game = __webpack_require__(5);
 
 var game = _interopRequireWildcard(_game);
 
-var _GameRenderer = __webpack_require__(9);
+var _GameRenderer = __webpack_require__(11);
 
 var _GameRenderer2 = _interopRequireDefault(_GameRenderer);
 
-var _GameLogger = __webpack_require__(4);
+var _GameLogger = __webpack_require__(6);
 
 var _GameLogger2 = _interopRequireDefault(_GameLogger);
 
-var _Snake = __webpack_require__(8);
+var _Snake = __webpack_require__(10);
 
 var _Snake2 = _interopRequireDefault(_Snake);
 
-var _Ball = __webpack_require__(7);
+var _Ball = __webpack_require__(9);
 
 var _Ball2 = _interopRequireDefault(_Ball);
 
-var _scriptSetup = __webpack_require__(19);
+var _scriptSetup = __webpack_require__(18);
 
 var scriptSetup = _interopRequireWildcard(_scriptSetup);
+
+var _GameTypes = __webpack_require__(1);
+
+var GameTypes = _interopRequireWildcard(_GameTypes);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -1144,7 +1301,6 @@ var MapController = function () {
     this.renderer = renderer;
     this.logger = logger;
     this.maps = maps;
-    this.tickIntervalID = null;
   }
 
   _createClass(MapController, [{
@@ -1152,6 +1308,7 @@ var MapController = function () {
     value: function switchToMap(mapID) {
       var _this = this;
 
+      this.state = 'stopped';
       this.logger.engine('Requested to load map "' + this.maps[mapID].name + '".');
       this.destroyCurrentMap(function () {
         if (localStorageHandler.getPlayedMaps().indexOf(mapID) == -1) localStorageHandler.setPlayedMaps([].concat(_toConsumableArray(localStorageHandler.getPlayedMaps()), [mapID]));
@@ -1159,7 +1316,7 @@ var MapController = function () {
         _this.map = Object.assign({}, _this.maps[mapID]);
         _this.mapID = mapID;
         _this.state = 'exposition';
-        _this.tickIntervalID = null;
+        _this.lastFrameTime = new Date().getTime();
         _this.onStartPlayingCallbacks = [];
         _this.delayed = [];
         _this.triggerOverlapListeners = [];
@@ -1194,13 +1351,14 @@ var MapController = function () {
   }, {
     key: 'render',
     value: function render() {
+      console.log('render');
       var snakeHeadCoordinates = this.snake.getHeadCoordinates();
       this.renderer.render(this.map, Math.floor(snakeHeadCoordinates.x / 40) * 320, Math.floor(snakeHeadCoordinates.y / 30) * 240, this.snake, this.balls);
     }
   }, {
-    key: 'onKeyDown',
-    value: function onKeyDown(key) {
-      if (key == 'Escape') {
+    key: 'onControl',
+    value: function onControl(control) {
+      if (control == 'ESCAPE') {
         game.openMainMenu();
       } else if (this.state == 'exposition') {
         this.state = 'playing';
@@ -1208,65 +1366,64 @@ var MapController = function () {
           return callback();
         });
         this.onStartPlayingCallbacks = [];
-      } else if (this.state == 'playing') this.snake.onKeyDown(key);
+      } else if (this.state == 'playing') this.snake.onControl(control);
     }
   }, {
     key: 'tick',
     value: function tick() {
       var _this2 = this;
 
-      if (this.state != 'terminating') {
-        var callbacks = [];
-        this.delayed = this.delayed.filter(function (info) {
-          if (info.remainingTicks-- <= 0) {
-            callbacks.push(info.callback);
-            return false;
-          } else return true;
+      var callbacks = [];
+      this.delayed = this.delayed.filter(function (info) {
+        if (info.remainingTicks-- <= 0) {
+          callbacks.push(info.callback);
+          return false;
+        } else return true;
+      });
+      callbacks.forEach(function (callback) {
+        return callback();
+      });
+
+      if (this.state == 'playing') this.snake.logicTick(this.map, this.balls);
+
+      if (this.snake.isDead()) {
+        this.switchToMap(this.mapID);
+      } else {
+        this.balls = this.balls.filter(function (ball) {
+          ball.logicTick(_this2.map);
+          return !ball.isDead();
         });
-        callbacks.forEach(function (callback) {
-          return callback();
+
+        var triggerListenersToCall = this.snake.computeTriggersOverlap(this.triggerOverlapListeners.map(function (trigger) {
+          return trigger.coordinates;
+        }));
+        triggerListenersToCall.forEach(function (listenerID) {
+          return _this2.triggerOverlapListeners[listenerID].callback();
         });
+      }
 
-        if (this.state == 'playing') this.snake.logicTick(this.map, this.balls);
+      this.render();
+    }
+  }, {
+    key: 'animationFrame',
+    value: function animationFrame() {
+      if (this.state != 'terminating' && this.state != 'stopped') {
+        var currentTime = new Date().getTime();
 
-        if (this.snake.isDead()) {
-          this.switchToMap(this.mapID);
-        } else {
-          this.balls = this.balls.filter(function (ball) {
-            ball.logicTick(_this2.map);
-            return !ball.isDead();
-          });
-
-          var triggerListenersToCall = this.snake.computeTriggersOverlap(this.triggerOverlapListeners.map(function (trigger) {
-            return trigger.coordinates;
-          }));
-          triggerListenersToCall.forEach(function (listenerID) {
-            return _this2.triggerOverlapListeners[listenerID].callback();
-          });
+        if (currentTime - this.lastFrameTime >= 333) {
+          this.tick();
+          this.lastFrameTime = currentTime;
         }
 
-        this.render();
+        requestAnimationFrame(this.animationFrame.bind(this));
       } else {
-        if (this.tickIntervalID != null) clearInterval(this.tickIntervalID);
-        this.tickIntervalID = null;
         this.onDestroy();
       }
     }
   }, {
     key: 'startTicking',
     value: function startTicking() {
-      this.tickIntervalID = setInterval(this.tick.bind(this), 1000 / 3);
-    }
-  }, {
-    key: 'stopTicking',
-    value: function stopTicking() {
-      if (this.tickIntervalID != null) clearInterval(this.tickIntervalID);
-      this.tickIntervalID = null;
-    }
-  }, {
-    key: 'isTicking',
-    value: function isTicking() {
-      return this.tickIntervalID !== null;
+      requestAnimationFrame(this.animationFrame.bind(this));
     }
   }, {
     key: 'resumeInterpreter',
@@ -1312,9 +1469,14 @@ var MapController = function () {
   }, {
     key: 'destroyCurrentMap',
     value: function destroyCurrentMap(onDestroy) {
-      if (this.isTicking()) {
+      var _this4 = this;
+
+      if (this.state != 'stopped') {
         this.state = 'terminating';
-        this.onDestroy = onDestroy;
+        this.onDestroy = function () {
+          _this4.state = 'stopped';
+          onDestroy();
+        };
       } else {
         onDestroy();
       }
@@ -1325,85 +1487,6 @@ var MapController = function () {
 }();
 
 exports.default = MapController;
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.renderMap = renderMap;
-exports.applyGlowEffect = applyGlowEffect;
-
-var _colors = __webpack_require__(1);
-
-var colors = _interopRequireWildcard(_colors);
-
-var _BoxBlur = __webpack_require__(18);
-
-var BoxBlur = _interopRequireWildcard(_BoxBlur);
-
-var _CommonTypes = __webpack_require__(0);
-
-var CommonTypes = _interopRequireWildcard(_CommonTypes);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function render(context, x, y, brush, editor) {
-  switch (brush) {
-    case 'Wall':
-      context.strokeStyle = colors.map.white;
-      context.strokeRect(x * 8, y * 8, 7, 7);
-      break;
-    case 'Spawnpoint':
-      if (editor) {
-        context.strokeStyle = colors.map.green;
-        context.strokeRect(x * 8, y * 8, 7, 7);
-      }
-      break;
-  }
-}
-
-function renderMap(context, map) {
-  Object.keys(map.blocks).forEach(function (accessor) {
-    var offset = {
-      x: parseInt(accessor.substring(0, accessor.indexOf(':')), 10) * 16,
-      y: parseInt(accessor.substring(accessor.indexOf(':') + 1), 10) * 16
-    };
-    map.blocks[accessor].forEach(function (arr, subdivisionX) {
-      return arr.forEach(function (brush, subdivisionY) {
-        render(context, offset.x + subdivisionX, offset.y + subdivisionY, brush, true);
-      });
-    });
-  });
-}
-
-function applyGlowEffect(context) {
-  var width = context.canvas.width;
-  var height = context.canvas.height;
-  var renderedPixels = context.getImageData(0, 0, width, height).data.subarray();
-  var blurredImage = BoxBlur.boxBlurCanvasRGBA(context, 5, 2);
-
-  var divider = 4;
-
-  for (var i = 0; i < width * height; i++) {
-    var index = 4 * i;
-
-    var alpha = renderedPixels[index + 3] / 255;
-    var invAlpha = 1 - alpha;
-    var glowAlpha = blurredImage.data[index + 3] / 255;
-    blurredImage.data[index] = renderedPixels[index] * alpha + blurredImage.data[index] * glowAlpha * invAlpha;
-    blurredImage.data[index + 1] = renderedPixels[index + 1] * alpha + blurredImage.data[index + 1] * glowAlpha * invAlpha;
-    blurredImage.data[index + 2] = renderedPixels[index + 2] * alpha + blurredImage.data[index + 2] * glowAlpha * invAlpha;
-    blurredImage.data[index + 3] = 255;
-  }
-
-  context.putImageData(blurredImage, 0, 0);
-}
 
 /***/ }),
 /* 13 */
@@ -9105,11 +9188,15 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _colors = __webpack_require__(1);
+var _fscreen = __webpack_require__(20);
+
+var _fscreen2 = _interopRequireDefault(_fscreen);
+
+var _colors = __webpack_require__(2);
 
 var colors = _interopRequireWildcard(_colors);
 
-var _renderer = __webpack_require__(12);
+var _renderer = __webpack_require__(4);
 
 var renderer = _interopRequireWildcard(_renderer);
 
@@ -9117,15 +9204,21 @@ var _CommonTypes = __webpack_require__(0);
 
 var CommonTypes = _interopRequireWildcard(_CommonTypes);
 
-var _localStorageHandler = __webpack_require__(5);
+var _localStorageHandler = __webpack_require__(7);
 
 var localStorageHandler = _interopRequireWildcard(_localStorageHandler);
 
-var _game = __webpack_require__(3);
+var _game = __webpack_require__(5);
 
 var game = _interopRequireWildcard(_game);
 
+var _GameTypes = __webpack_require__(1);
+
+var GameTypes = _interopRequireWildcard(_GameTypes);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
@@ -9159,18 +9252,33 @@ var MainMenu = function () {
 
       this.menus = [{
         title: 'Play',
-        explaination: 'Press enter to play.',
+        explaination: 'Press enter or tap once to play.',
         onPressEnter: function onPressEnter() {
           game.loadMap(0);
         }
       }, {
         title: 'Select a level',
         submenus: selectLevelSubmenus,
-        explaination: 'Press enter to play the selected level.'
+        explaination: 'Press enter or tap once to play the selected level.'
       }, {
         title: 'How to play',
-        explaination: 'Use the arrow keys to lead the snake, and press Escape to return to the main menu.'
+        explaination: 'Use the arrow keys or swipe to lead the snake, and press Backspace or double tap to return to the main menu.'
       }];
+
+      if (_fscreen2.default.fullscreenEnabled) {
+        this.menus = [].concat(_toConsumableArray(this.menus), [{
+          title: 'Full screen',
+          explaination: 'Press enter or tap once to toggle fullscreen mode.',
+          onPressEnter: function onPressEnter() {
+            if (_fscreen2.default.fullscreenElement) {
+              _fscreen2.default.exitFullscreen();
+            } else {
+              _fscreen2.default.requestFullscreen(document.getElementById('canvas-container'));
+            }
+          }
+        }]);
+      }
+
       this.render();
     }
   }, {
@@ -9189,12 +9297,12 @@ var MainMenu = function () {
       }
     }
   }, {
-    key: 'onKeyDown',
-    value: function onKeyDown(key) {
+    key: 'onControl',
+    value: function onControl(control) {
       var selectedMenu = this.getSelectedMenu();
       var selectedSubMenu = this.getSelectedSubmenu();
-      switch (key) {
-        case 'ArrowUp':
+      switch (control) {
+        case 'UP':
           if (this.inSubMenu) {
             if (selectedMenu.submenus) {
               var nextSelection = this.selectedSubMenu;
@@ -9210,7 +9318,7 @@ var MainMenu = function () {
             }
           } else this.selectedMenu = Math.max(this.selectedMenu - 1, 0);
           break;
-        case 'ArrowDown':
+        case 'DOWN':
           if (this.inSubMenu) {
             if (selectedMenu.submenus) {
               var _nextSelection = this.selectedSubMenu;
@@ -9226,14 +9334,14 @@ var MainMenu = function () {
             }
           } else this.selectedMenu = Math.min(this.selectedMenu + 1, this.menus.length - 1);
           break;
-        case 'ArrowLeft':
+        case 'LEFT':
           this.inSubMenu = false;
           this.selectedSubMenu = 0;
           break;
-        case 'ArrowRight':
+        case 'RIGHT':
           if (selectedMenu.submenus) this.inSubMenu = true;
           break;
-        case 'Enter':
+        case 'ENTER':
           if (this.inSubMenu) {
             if (selectedSubMenu && selectedSubMenu.onPressEnter) selectedSubMenu.onPressEnter();
           } else {
@@ -9254,6 +9362,8 @@ var MainMenu = function () {
       this.context.setTransform(2, 0, 0, 2, 0, 0);
       this.context.clearRect(-1, -1, 321, 241);
 
+      this.context.shadowBlur = renderer.shadowBlur;
+      this.context.shadowColor = colors.map.white;
       this.context.fillStyle = colors.map.white;
 
       this.context.font = '24px Share Tech Mono';
@@ -9308,7 +9418,7 @@ var MainMenu = function () {
       this.context.fillStyle = colors.map.white;
       this.context.font = '10px Share Tech Mono';
       var yOffset = 25 * 8;
-      var message = 'Use the arrow keys to navigate through menus.';
+      var message = 'Use the arrow keys or swipe to navigate through menus.';
       var charArray = [].concat(_toConsumableArray(message));
       var accumulator = '';
       charArray.forEach(function (char, index) {
@@ -9321,8 +9431,6 @@ var MainMenu = function () {
 
       this.context.font = '8px Share Tech Mono';
       this.context.fillText('Copyright (c) 2017 Julien Marquet.', 16, 236);
-
-      renderer.applyGlowEffect(this.context);
     }
   }]);
 
@@ -9351,6 +9459,9 @@ function setup() {
     contextmenu.style.display = 'none';
 
     contextmenu.addEventListener('mouseleave', function () {
+      contextmenu.style.display = 'none';
+    });
+    document.addEventListener('touchstart', function () {
       contextmenu.style.display = 'none';
     });
     document.addEventListener('contextmenu', function (event) {
@@ -9386,195 +9497,13 @@ function setup() {
 
 
 Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-exports.boxBlurCanvasRGBA = boxBlurCanvasRGBA;
-
-
-/*
-
-Superfast Blur - a fast Box Blur For Canvas
-
-Version: 	0.5
-Author:		Mario Klingemann
-Contact: 	mario@quasimondo.com
-Website:	http://www.quasimondo.com/BoxBlurForCanvas
-Twitter:	@quasimondo
-
-In case you find this class useful - especially in commercial projects -
-I am not totally unhappy for a small donation to my PayPal account
-mario@quasimondo.de
-
-Or support me on flattr:
-https://flattr.com/thing/140066/Superfast-Blur-a-pretty-fast-Box-Blur-Effect-for-CanvasJavascript
-
-Copyright (c) 2011 Mario Klingemann
-
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without
-restriction, including without limitation the rights to use,
-copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-*/
-
-var mul_table = [1, 57, 41, 21, 203, 34, 97, 73, 227, 91, 149, 62, 105, 45, 39, 137, 241, 107, 3, 173, 39, 71, 65, 238, 219, 101, 187, 87, 81, 151, 141, 133, 249, 117, 221, 209, 197, 187, 177, 169, 5, 153, 73, 139, 133, 127, 243, 233, 223, 107, 103, 99, 191, 23, 177, 171, 165, 159, 77, 149, 9, 139, 135, 131, 253, 245, 119, 231, 224, 109, 211, 103, 25, 195, 189, 23, 45, 175, 171, 83, 81, 79, 155, 151, 147, 9, 141, 137, 67, 131, 129, 251, 123, 30, 235, 115, 113, 221, 217, 53, 13, 51, 50, 49, 193, 189, 185, 91, 179, 175, 43, 169, 83, 163, 5, 79, 155, 19, 75, 147, 145, 143, 35, 69, 17, 67, 33, 65, 255, 251, 247, 243, 239, 59, 29, 229, 113, 111, 219, 27, 213, 105, 207, 51, 201, 199, 49, 193, 191, 47, 93, 183, 181, 179, 11, 87, 43, 85, 167, 165, 163, 161, 159, 157, 155, 77, 19, 75, 37, 73, 145, 143, 141, 35, 138, 137, 135, 67, 33, 131, 129, 255, 63, 250, 247, 61, 121, 239, 237, 117, 29, 229, 227, 225, 111, 55, 109, 216, 213, 211, 209, 207, 205, 203, 201, 199, 197, 195, 193, 48, 190, 47, 93, 185, 183, 181, 179, 178, 176, 175, 173, 171, 85, 21, 167, 165, 41, 163, 161, 5, 79, 157, 78, 154, 153, 19, 75, 149, 74, 147, 73, 144, 143, 71, 141, 140, 139, 137, 17, 135, 134, 133, 66, 131, 65, 129, 1];
-
-var shg_table = [0, 9, 10, 10, 14, 12, 14, 14, 16, 15, 16, 15, 16, 15, 15, 17, 18, 17, 12, 18, 16, 17, 17, 19, 19, 18, 19, 18, 18, 19, 19, 19, 20, 19, 20, 20, 20, 20, 20, 20, 15, 20, 19, 20, 20, 20, 21, 21, 21, 20, 20, 20, 21, 18, 21, 21, 21, 21, 20, 21, 17, 21, 21, 21, 22, 22, 21, 22, 22, 21, 22, 21, 19, 22, 22, 19, 20, 22, 22, 21, 21, 21, 22, 22, 22, 18, 22, 22, 21, 22, 22, 23, 22, 20, 23, 22, 22, 23, 23, 21, 19, 21, 21, 21, 23, 23, 23, 22, 23, 23, 21, 23, 22, 23, 18, 22, 23, 20, 22, 23, 23, 23, 21, 22, 20, 22, 21, 22, 24, 24, 24, 24, 24, 22, 21, 24, 23, 23, 24, 21, 24, 23, 24, 22, 24, 24, 22, 24, 24, 22, 23, 24, 24, 24, 20, 23, 22, 23, 24, 24, 24, 24, 24, 24, 24, 23, 21, 23, 22, 23, 24, 24, 24, 22, 24, 24, 24, 23, 22, 24, 24, 25, 23, 25, 25, 23, 24, 25, 25, 24, 22, 25, 25, 25, 24, 23, 24, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 23, 25, 23, 24, 25, 25, 25, 25, 25, 25, 25, 25, 25, 24, 22, 25, 25, 23, 25, 25, 20, 24, 25, 24, 25, 25, 22, 24, 25, 24, 25, 24, 25, 25, 24, 25, 25, 25, 25, 22, 25, 25, 25, 24, 25, 24, 25, 18];
-
-function boxBlurCanvasRGBA(context, radius, iterations) {
-	if (isNaN(radius) || radius < 1) throw 'Expected radius to be a number > 1.';
-
-	radius |= 0;
-
-	if (isNaN(iterations)) iterations = 1;
-	iterations |= 0;
-	if (iterations > 3) iterations = 3;
-	if (iterations < 1) iterations = 1;
-
-	var imageData;
-	var width = context.canvas.width;
-	var height = context.canvas.height;
-
-	imageData = context.getImageData(0, 0, width, height);
-
-	var pixels = imageData.data;
-
-	var rsum, gsum, bsum, asum, x, y, i, p, p1, p2, yp, yi, yw, idx, pa;
-	var wm = width - 1;
-	var hm = height - 1;
-	var wh = width * height;
-	var rad1 = radius + 1;
-
-	var mul_sum = mul_table[radius];
-	var shg_sum = shg_table[radius];
-
-	var r = [];
-	var g = [];
-	var b = [];
-	var a = [];
-
-	var vmin = [];
-	var vmax = [];
-
-	while (iterations-- > 0) {
-		yw = yi = 0;
-
-		for (y = 0; y < height; y++) {
-			rsum = pixels[yw] * rad1;
-			gsum = pixels[yw + 1] * rad1;
-			bsum = pixels[yw + 2] * rad1;
-			asum = pixels[yw + 3] * rad1;
-
-			for (i = 1; i <= radius; i++) {
-				p = yw + ((i > wm ? wm : i) << 2);
-				rsum += pixels[p++];
-				gsum += pixels[p++];
-				bsum += pixels[p++];
-				asum += pixels[p];
-			}
-
-			for (x = 0; x < width; x++) {
-				r[yi] = rsum;
-				g[yi] = gsum;
-				b[yi] = bsum;
-				a[yi] = asum;
-
-				if (y == 0) {
-					vmin[x] = ((p = x + rad1) < wm ? p : wm) << 2;
-					vmax[x] = (p = x - radius) > 0 ? p << 2 : 0;
-				}
-
-				p1 = yw + vmin[x];
-				p2 = yw + vmax[x];
-
-				rsum += pixels[p1++] - pixels[p2++];
-				gsum += pixels[p1++] - pixels[p2++];
-				bsum += pixels[p1++] - pixels[p2++];
-				asum += pixels[p1] - pixels[p2];
-
-				yi++;
-			}
-			yw += width << 2;
-		}
-
-		for (x = 0; x < width; x++) {
-			yp = x;
-			rsum = r[yp] * rad1;
-			gsum = g[yp] * rad1;
-			bsum = b[yp] * rad1;
-			asum = a[yp] * rad1;
-
-			for (i = 1; i <= radius; i++) {
-				yp += i > hm ? 0 : width;
-				rsum += r[yp];
-				gsum += g[yp];
-				bsum += b[yp];
-				asum += a[yp];
-			}
-
-			yi = x << 2;
-			for (y = 0; y < height; y++) {
-
-				pixels[yi + 3] = pa = asum * mul_sum >>> shg_sum;
-				if (pa > 0) {
-					pa = 255 / pa;
-					pixels[yi] = (rsum * mul_sum >>> shg_sum) * pa;
-					pixels[yi + 1] = (gsum * mul_sum >>> shg_sum) * pa;
-					pixels[yi + 2] = (bsum * mul_sum >>> shg_sum) * pa;
-				} else {
-					pixels[yi] = pixels[yi + 1] = pixels[yi + 2] = 0;
-				}
-				if (x == 0) {
-					vmin[y] = ((p = y + rad1) < hm ? p : hm) * width;
-					vmax[y] = (p = y - radius) > 0 ? p * width : 0;
-				}
-
-				p1 = x + vmin[y];
-				p2 = x + vmax[y];
-
-				rsum += r[p1] - r[p2];
-				gsum += g[p1] - g[p2];
-				bsum += b[p1] - b[p2];
-				asum += a[p1] - a[p2];
-
-				yi += width << 2;
-			}
-		}
-	}
-
-	return imageData;
-}
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.setup = setup;
 
 var _jsonschema = __webpack_require__(22);
 
-var _MapTools = __webpack_require__(6);
+var _MapTools = __webpack_require__(8);
 
 var MapTools = _interopRequireWildcard(_MapTools);
 
@@ -9582,19 +9511,19 @@ var _CommonTypes = __webpack_require__(0);
 
 var CommonTypes = _interopRequireWildcard(_CommonTypes);
 
-var _GameLogger = __webpack_require__(4);
+var _GameLogger = __webpack_require__(6);
 
 var _GameLogger2 = _interopRequireDefault(_GameLogger);
 
-var _MapController = __webpack_require__(11);
+var _MapController = __webpack_require__(12);
 
 var _MapController2 = _interopRequireDefault(_MapController);
 
-var _game = __webpack_require__(3);
+var _game = __webpack_require__(5);
 
 var game = _interopRequireWildcard(_game);
 
-var _GameTypes = __webpack_require__(10);
+var _GameTypes = __webpack_require__(1);
 
 var GameTypes = _interopRequireWildcard(_GameTypes);
 
@@ -9765,7 +9694,7 @@ function setup(logger, mapController) {
 }
 
 /***/ }),
-/* 20 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9850,13 +9779,81 @@ function escapeHtml(string) {
 
 
 /***/ }),
+/* 20 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var key = {
+  fullscreenEnabled: 0,
+  fullscreenElement: 1,
+  requestFullscreen: 2,
+  exitFullscreen: 3,
+  fullscreenchange: 4,
+  fullscreenerror: 5
+};
+
+var webkit = ['webkitFullscreenEnabled', 'webkitFullscreenElement', 'webkitRequestFullscreen', 'webkitExitFullscreen', 'webkitfullscreenchange', 'webkitfullscreenerror'];
+
+var moz = ['mozFullScreenEnabled', 'mozFullScreenElement', 'mozRequestFullScreen', 'mozCancelFullScreen', 'mozfullscreenchange', 'mozfullscreenerror'];
+
+var ms = ['msFullscreenEnabled', 'msFullscreenElement', 'msRequestFullscreen', 'msExitFullscreen', 'MSFullscreenChange', 'MSFullscreenError'];
+
+// so it doesn't throw if no window or document
+var document = typeof window !== 'undefined' && typeof window.document !== 'undefined' ? window.document : {};
+
+var vendor = 'fullscreenEnabled' in document && Object.keys(key) || webkit[0] in document && webkit || moz[0] in document && moz || ms[0] in document && ms || [];
+
+exports.default = {
+  requestFullscreen: function requestFullscreen(element) {
+    return element[vendor[key.requestFullscreen]]();
+  },
+  requestFullscreenFunction: function requestFullscreenFunction(element) {
+    return element[vendor[key.requestFullscreen]];
+  },
+  get exitFullscreen() {
+    return document[vendor[key.exitFullscreen]].bind(document);
+  },
+  addEventListener: function addEventListener(type, handler, options) {
+    return document.addEventListener(vendor[key[type]], handler, options);
+  },
+  removeEventListener: function removeEventListener(type, handler, options) {
+    return document.removeEventListener(vendor[key[type]], handler, options);
+  },
+  get fullscreenEnabled() {
+    return Boolean(document[vendor[key.fullscreenEnabled]]);
+  },
+  set fullscreenEnabled(val) {},
+  get fullscreenElement() {
+    return document[vendor[key.fullscreenElement]];
+  },
+  set fullscreenElement(val) {},
+  get onfullscreenchange() {
+    return document[('on' + vendor[key.fullscreenchange]).toLowerCase()];
+  },
+  set onfullscreenchange(handler) {
+    return document[('on' + vendor[key.fullscreenchange]).toLowerCase()] = handler;
+  },
+  get onfullscreenerror() {
+    return document[('on' + vendor[key.fullscreenerror]).toLowerCase()];
+  },
+  set onfullscreenerror(handler) {
+    return document[('on' + vendor[key.fullscreenerror]).toLowerCase()] = handler;
+  }
+};
+
+/***/ }),
 /* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var helpers = __webpack_require__(2);
+var helpers = __webpack_require__(3);
 
 /** @type ValidatorResult */
 var ValidatorResult = helpers.ValidatorResult;
@@ -10668,9 +10665,9 @@ module.exports = attribute;
 
 var Validator = module.exports.Validator = __webpack_require__(23);
 
-module.exports.ValidatorResult = __webpack_require__(2).ValidatorResult;
-module.exports.ValidationError = __webpack_require__(2).ValidationError;
-module.exports.SchemaError = __webpack_require__(2).SchemaError;
+module.exports.ValidatorResult = __webpack_require__(3).ValidatorResult;
+module.exports.ValidationError = __webpack_require__(3).ValidationError;
+module.exports.SchemaError = __webpack_require__(3).SchemaError;
 
 module.exports.validate = function (instance, schema, options) {
   var v = new Validator();
@@ -10688,7 +10685,7 @@ module.exports.validate = function (instance, schema, options) {
 var urilib = __webpack_require__(14);
 
 var attribute = __webpack_require__(21);
-var helpers = __webpack_require__(2);
+var helpers = __webpack_require__(3);
 var ValidatorResult = helpers.ValidatorResult;
 var SchemaError = helpers.SchemaError;
 var SchemaContext = helpers.SchemaContext;
