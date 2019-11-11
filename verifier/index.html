@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>TIPE</title>
+    <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
+    <script src="vendor/ace.js"></script>
+  </head>
+  <body>
+    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+    <script src="./bootstrap.js"></script>
+    <div class="header">
+      <div>
+        <span>Ctrl+Entrée pour exécuter</span>
+      </div>
+      <div id="buttons-container">
+      </div>
+    </div>
+    <div class="container">
+      <div class="pane">
+        <div id="editor"></div>
+      </div>
+      <div class="pane">
+        <div id="terminal"></div>
+      </div>
+  </container>
+  </body>
+  <style>
+  body {
+    margin: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .container {
+    display: flex;
+    bottom: 0;
+    height: 100%;
+  }
+
+  .pane {
+    flex: 1;
+  }
+
+  #editor {
+    width: 100%;
+    height: 100%;
+  }
+  </style>
+</html>
